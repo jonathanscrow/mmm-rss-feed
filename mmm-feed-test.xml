@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Monday Morning Motivator — Test Feed</title>
+    <title>TEST SUBJECT — Monday Motivator from TexInspec</title>
     <link>https://www.texinspec.com/monday-motivator</link>
-    <description>Test feed for validating GHL RSS Schedule behavior with future pubDates.</description>
+    <description>Weekly motivation for real estate professionals</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 06 May 2026 20:40:50 +0000</lastBuildDate>
-    <atom:link href="REPLACE_WITH_GITHUB_RAW_URL" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 06 May 2026 22:06:22 +0000</lastBuildDate>
+    <atom:link href="https://raw.githubusercontent.com/jonathanscrow/mmm-rss-feed/refs/heads/main/mmm-feed-test.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Monday Motivator: &quot;You are never too old to set another goal...&quot; - Lewis</title>
       <link>https://www.texinspec.com/monday-motivator/wk001</link>
       <guid isPermaLink="false">mmm-test-wk001</guid>
-      <pubDate>Wed, 06 May 2026 20:30:50 +0000</pubDate>
+      <pubDate>Wed, 06 May 2026 21:56:22 +0000</pubDate>
+      <author>clientcare@texinspec.com (TexInspec)</author>
       <description><![CDATA[
 <div style="text-align:center;font-family:Georgia,serif;">
   <img src="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e476fece50437c2bf2.png" alt="Monday Motivator Week 1" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />
@@ -29,6 +30,7 @@
       <link>https://www.texinspec.com/monday-motivator/wk002</link>
       <guid isPermaLink="false">mmm-test-wk002</guid>
       <pubDate>Thu, 07 May 2026 08:00:00 -0500</pubDate>
+      <author>clientcare@texinspec.com (TexInspec)</author>
       <description><![CDATA[
 <div style="text-align:center;font-family:Georgia,serif;">
   <img src="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4becb53a7350ae73b.png" alt="Monday Motivator Week 2" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />
@@ -46,6 +48,7 @@
       <link>https://www.texinspec.com/monday-motivator/wk003</link>
       <guid isPermaLink="false">mmm-test-wk003</guid>
       <pubDate>Fri, 08 May 2026 08:00:00 -0500</pubDate>
+      <author>clientcare@texinspec.com (TexInspec)</author>
       <description><![CDATA[
 <div style="text-align:center;font-family:Georgia,serif;">
   <img src="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4101c593bfc8299fc.png" alt="Monday Motivator Week 3" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />
@@ -63,6 +66,7 @@
       <link>https://www.texinspec.com/monday-motivator/wk004</link>
       <guid isPermaLink="false">mmm-test-wk004</guid>
       <pubDate>Sat, 09 May 2026 08:00:00 -0500</pubDate>
+      <author>clientcare@texinspec.com (TexInspec)</author>
       <description><![CDATA[
 <div style="text-align:center;font-family:Georgia,serif;">
   <img src="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e47167fd9a359377b5.png" alt="Monday Motivator Week 4" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />
