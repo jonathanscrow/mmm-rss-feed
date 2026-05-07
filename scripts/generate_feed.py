@@ -11,12 +11,10 @@ Design principles:
   (sheet contents, current date) -> feed file. No state is kept anywhere else.
 - Forward-looking date logic: on Sunday, the script picks tomorrow's Monday so the
   Sunday preview email shows the upcoming send. On Monday, it picks today.
-  Tuesday-Saturday it picks the next Monday (immaterial — feed isn't polled
-  during those days anyway).
-- Writes to stdout for the GitHub Action log (auditable: each run prints which week
-  was selected and why).
-- Exits non-zero on any error so the Action shows a failure (which emails the repo
-  owner).
+- The feed exposes IMAGE and QUOTE as separately addressable RSS fields so the
+  email template can A/B test layouts:
+    <description>     -> just <img>      -> renders via {{{rss_item.content}}}
+    <content:encoded> -> quote + author  -> renders via {{{rss_item.content_full}}}
 
 Environment variables required:
 - GOOGLE_SHEETS_CREDENTIALS: JSON service account credentials (set via GitHub Secret)
@@ -41,11 +39,8 @@ from google.oauth2.service_account import Credentials
 
 def central_today():
     """Return today's date in Central Time."""
-    # Use UTC-6 (CST) to be conservative — at worst this means during a DST overlap
-    # we'd consider it "still yesterday" in Texas, which is fine because the date
-    # we care about (this week's Monday) doesn't change.
     utc_now = datetime.now(timezone.utc)
-    central_offset = timezone(timedelta(hours=-6))  # CST
+    central_offset = timezone(timedelta(hours=-6))  # CST (worst case)
     return utc_now.astimezone(central_offset).date()
 
 
@@ -56,7 +51,6 @@ def upcoming_monday_on_or_after(d):
       Sunday   2026-05-10 -> Monday 2026-05-11
       Monday   2026-05-11 -> Monday 2026-05-11  (today)
       Tuesday  2026-05-12 -> Monday 2026-05-18  (next week)
-      Saturday 2026-05-16 -> Monday 2026-05-18  (next week)
     """
     days_ahead = (0 - d.weekday()) % 7  # Mon=0, ..., Sun=6
     return d + timedelta(days=days_ahead)
@@ -127,10 +121,13 @@ def build_feed(row, generated_at_utc):
     """
     Build the RSS 2.0 feed with a single <item>.
 
-    Channel-level metadata is set to match the item's content because GHL's RSS
-    Schedule subject-line field only supports {{rss_feed.*}} (channel) variables,
-    not {{rss_item.*}}. By making channel.title == item.subject, the email subject
-    line stays dynamic per week.
+    Image and quote are split into separate fields:
+      <description>     = <img> only
+      <content:encoded> = quote text + author byline
+
+    In GHL's email template:
+      {{{rss_item.content}}}      pulls description (image-only HTML)
+      {{{rss_item.content_full}}} pulls content:encoded (quote-only HTML)
     """
     week = row['week_num']
     quote = row['quote']
@@ -139,30 +136,28 @@ def build_feed(row, generated_at_utc):
     image_url = row['image_url']
     send_date = row['send_date']
 
-    # GUID must be stable per week. Using week_num + send_date makes it
-    # impossible for two weeks to ever have the same GUID.
+    # GUID stable per week
     guid = f"mmm-wk{int(week):03d}-{send_date}"
 
-    # pubDate at noon CT on the send_date. Doesn't really matter for delivery
-    # since GHL ignores pubDate for filtering, but it should be a real date
-    # for any RSS reader that consumes the feed directly.
+    # pubDate at noon CT on the send_date (cosmetic — GHL ignores it for filtering)
     pub_dt = datetime.strptime(send_date, '%Y-%m-%d')
     pub_dt = pub_dt.replace(hour=12, tzinfo=timezone(timedelta(hours=-6)))
 
-    # The HTML body of the email. This is what {{rss_item.content_full}}
-    # renders inside the RSS Items block in GHL.
-    description_html = f'''<![CDATA[
+    # IMAGE-ONLY HTML (goes in <description>, pulled via {{{rss_item.content}}})
+    image_html = f'''<![CDATA[<img src="{image_url}" alt="Monday Motivator Week {week}" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />]]>'''
+
+    # QUOTE-ONLY HTML (goes in <content:encoded>, pulled via {{{rss_item.content_full}}})
+    quote_html = f'''<![CDATA[
 <div style="text-align:center;font-family:Georgia,serif;">
-  <img src="{image_url}" alt="Monday Motivator Week {week}" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />
   <blockquote style="font-size:20px;font-style:italic;margin:24px auto;max-width:540px;line-height:1.5;">
     &ldquo;{xml_escape(quote)}&rdquo;
   </blockquote>
-  <p style="font-size:16px;color:#555;margin-top:16px;">— {xml_escape(author)}</p>
+  <p style="font-size:16px;color:#555;margin-top:16px;">&mdash; {xml_escape(author)}</p>
 </div>
 ]]>'''
 
     feed = f'''<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>{xml_escape(subject)}</title>
     <link>https://www.texinspec.com/monday-motivator</link>
@@ -176,7 +171,8 @@ def build_feed(row, generated_at_utc):
       <guid isPermaLink="false">{guid}</guid>
       <pubDate>{format_datetime(pub_dt)}</pubDate>
       <author>clientcare@texinspec.com (TexInspec)</author>
-      <description>{description_html}</description>
+      <description>{image_html}</description>
+      <content:encoded>{quote_html}</content:encoded>
       <enclosure url="{xml_escape(image_url)}" type="image/png" length="0" />
       <media:content url="{xml_escape(image_url)}" medium="image" type="image/png" />
     </item>
@@ -221,8 +217,6 @@ def main():
 
     print(f"Wrote {output_path} ({len(feed_xml)} bytes).")
 
-    # Also write a per-week audit log entry. These accumulate over 5 years and
-    # provide a forensic trail of "what was sent each week."
     os.makedirs('logs', exist_ok=True)
     log_path = f"logs/{target_monday.strftime('%Y-%m-%d')}-wk{int(row['week_num']):03d}.txt"
     with open(log_path, 'w', encoding='utf-8') as f:
