@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Monday Motivator: &quot;You are never too old to set another goal...&quot; - Lewis</title>
+    <link>https://www.texinspec.com/monday-motivator</link>
+    <description>Weekly motivation from TexInspec</description>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 07 May 2026 13:33:24 +0000</lastBuildDate>
+    <atom:link href="https://raw.githubusercontent.com/jonathanscrow/mmm-rss-feed/refs/heads/main/mmm-feed.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Monday Motivator: &quot;You are never too old to set another goal...&quot; - Lewis</title>
+      <link>https://www.texinspec.com/monday-motivator/wk001</link>
+      <guid isPermaLink="false">mmm-wk001-2026-05-11</guid>
+      <pubDate>Mon, 11 May 2026 12:00:00 -0600</pubDate>
+      <author>clientcare@texinspec.com (TexInspec)</author>
+      <description><![CDATA[
+<div style="text-align:center;font-family:Georgia,serif;">
+  <img src="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e476fece50437c2bf2.png" alt="Monday Motivator Week 1" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />
+  <blockquote style="font-size:20px;font-style:italic;margin:24px auto;max-width:540px;line-height:1.5;">
+    &ldquo;You are never too old to set another goal or to dream a new dream.&rdquo;
+  </blockquote>
+  <p style="font-size:16px;color:#555;margin-top:16px;">— C.S. Lewis</p>
+</div>
+]]></description>
+      <enclosure url="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e476fece50437c2bf2.png" type="image/png" length="0" />
+      <media:content url="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e476fece50437c2bf2.png" medium="image" type="image/png" />
+    </item>
+  </channel>
+</rss>
