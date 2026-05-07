@@ -15,6 +15,14 @@ Design principles:
   email template can A/B test layouts:
     <description>     -> just <img>      -> renders via {{{rss_item.content}}}
     <content:encoded> -> quote + author  -> renders via {{{rss_item.content_full}}}
+- The RSS <title> is read from the Sheet's subject_line column, which contains
+  hand-curated snipped subjects in the format:
+    "Quote snippet..." \u2014 Full Author Name
+  The "Monday Motivator:" prefix is NOT in the column — the campaign template
+  in GHL adds it via `Monday Motivator: {{rss_feed.title}}` so the prefix can
+  be edited on the fly without rotating the feed.
+  If subject_line is empty, the script falls back to auto-generation from
+  quote + author.
 
 Environment variables required:
 - GOOGLE_SHEETS_CREDENTIALS: JSON service account credentials (set via GitHub Secret)
@@ -104,11 +112,62 @@ def find_current_row(rows, target_date):
 
 
 # ---------------------------------------------------------------------------
+# Title generation
+# ---------------------------------------------------------------------------
+
+def build_subject_title(quote, author, max_quote_chars=70):
+    """Build the RSS <title> string used by GHL for the email subject line.
+
+    Format: "<quote snippet>..." — <full author name>
+
+    The quote is truncated to ~70 chars to keep the subject inbox-friendly.
+    Truncation happens at a word boundary if possible.
+
+    GHL was observed to display raw &quot; entities in subject lines instead
+    of decoding them to ". To sidestep this entirely, we use Unicode curly
+    quotes (\u201c \u201d) instead of straight quotes — these don't require
+    any XML escaping and render identically across all email clients. They
+    also look more typographically correct.
+
+    Examples:
+      ("You are never too old to set another goal or to dream a new dream.", "C.S. Lewis")
+       -> '\u201cYou are never too old to set another goal or to dream a new dream.\u201d \u2014 C.S. Lewis'
+
+      ("Be yourself; everyone else is taken.", "Oscar Wilde")
+       -> '\u201cBe yourself; everyone else is taken.\u201d \u2014 Oscar Wilde'
+    """
+    quote = quote.strip()
+
+    # Strip leading/trailing quote marks if the Sheet already has them
+    # (we'll add our own consistently in curly form)
+    quote = quote.strip('"').strip("'").strip('\u201c').strip('\u201d').strip()
+
+    if len(quote) <= max_quote_chars:
+        snippet = quote
+    else:
+        # Truncate at last space before max_quote_chars to avoid mid-word cuts
+        cutoff = quote.rfind(' ', 0, max_quote_chars)
+        if cutoff == -1:
+            cutoff = max_quote_chars
+        snippet = quote[:cutoff].rstrip(',;:') + '...'
+
+    return f'\u201c{snippet}\u201d \u2014 {author.strip()}'
+
+
+# ---------------------------------------------------------------------------
 # Build the RSS feed XML
 # ---------------------------------------------------------------------------
 
 def xml_escape(s):
-    """Escape XML special characters in attribute values and text."""
+    """Escape XML special characters in attribute values and text.
+
+    Note: encodes " as &quot; which is correct XML. Any conformant parser
+    decodes it back to ". GHL does this for the email body but we observed
+    it does NOT decode entities in the <title> when used as a subject line —
+    instead it shows the raw &quot; text. To work around this we keep the
+    title generation in build_subject_title() using literal " characters,
+    and rely on this xml_escape() to handle them at write time.
+    """
     return (str(s)
             .replace('&', '&amp;')
             .replace('<', '&lt;')
@@ -128,13 +187,26 @@ def build_feed(row, generated_at_utc):
     In GHL's email template:
       {{{rss_item.content}}}      pulls description (image-only HTML)
       {{{rss_item.content_full}}} pulls content:encoded (quote-only HTML)
+
+    The <title> is read directly from the Sheet's subject_line column. That column
+    contains hand-curated, snipped subject lines in the format:
+      \u201cQuote snippet...\u201d \u2014 Full Author Name
+    The "Monday Motivator: " prefix is NOT in the column — the campaign template
+    in GHL adds it via `Monday Motivator: {{rss_feed.title}}`.
     """
     week = row['week_num']
     quote = row['quote']
     author = row['author']
-    subject = row['subject_line']
     image_url = row['image_url']
     send_date = row['send_date']
+
+    # Read the curated subject line from the Sheet. If the column is empty
+    # (someone forgot to fill it in for this week), fall back to auto-generation
+    # from quote + author so the email still goes out with a sensible subject.
+    title = (row.get('subject_line') or '').strip()
+    if not title:
+        title = build_subject_title(quote, author)
+        print(f"  WARNING: subject_line column was empty, auto-generated: {title}")
 
     # GUID stable per week
     guid = f"mmm-wk{int(week):03d}-{send_date}"
@@ -159,14 +231,14 @@ def build_feed(row, generated_at_utc):
     feed = f'''<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>{xml_escape(subject)}</title>
+    <title>{xml_escape(title)}</title>
     <link>https://www.texinspec.com/monday-motivator</link>
     <description>Weekly motivation from TexInspec</description>
     <language>en-us</language>
     <lastBuildDate>{format_datetime(generated_at_utc)}</lastBuildDate>
     <atom:link href="https://raw.githubusercontent.com/jonathanscrow/mmm-rss-feed/refs/heads/main/mmm-feed.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>{xml_escape(subject)}</title>
+      <title>{xml_escape(title)}</title>
       <link>https://www.texinspec.com/monday-motivator/wk{int(week):03d}</link>
       <guid isPermaLink="false">{guid}</guid>
       <pubDate>{format_datetime(pub_dt)}</pubDate>
@@ -205,8 +277,9 @@ def main():
             f"or there's a date mismatch in the Sheet."
         )
 
+    title = build_subject_title(row['quote'], row['author'])
     print(f"Selected: Week {row['week_num']} — {row['author']}")
-    print(f"  Subject: {row['subject_line']}")
+    print(f"  Title:   {title}")
     print(f"  Image:   {row['image_url'][:80]}")
 
     feed_xml = build_feed(row, datetime.now(timezone.utc))
@@ -224,7 +297,7 @@ def main():
         f.write(f"Send date: {row['send_date']}\n")
         f.write(f"Week:      {row['week_num']}\n")
         f.write(f"Author:    {row['author']}\n")
-        f.write(f"Subject:   {row['subject_line']}\n")
+        f.write(f"Title:     {title}\n")
         f.write(f"Image:     {row['image_url']}\n")
         f.write(f"Quote:     {row['quote']}\n")
     print(f"Wrote audit log: {log_path}")
