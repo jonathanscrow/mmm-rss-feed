@@ -1,0 +1,46 @@
+name: Monday Feed Rotation
+
+# Monday at 12:00 UTC = 7:00 AM CDT (summer) / 6:00 AM CST (winter).
+# This is the "final" rotation — picks up any edits to the Google Sheet made
+# after Sunday's preview email landed in your inbox. GHL polls the production
+# campaign at 8 AM CT, so this gives the rotation a 1-hour buffer before send.
+on:
+  schedule:
+    - cron: '0 12 * * 1'   # Monday at 12:00 UTC
+
+  workflow_dispatch:
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install gspread google-auth
+
+      - name: Generate feed from Google Sheet
+        env:
+          GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        run: python scripts/generate_feed.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "MMM Rotation Bot"
+          git config user.email "actions@github.com"
+          git add mmm-feed.xml logs/
+          if git diff --staged --quiet; then
+            echo "No changes to commit since Sunday's rotation."
+          else
+            git commit -m "Monday rotation: $(date -u +%Y-%m-%d)"
+            git push
+          fi
