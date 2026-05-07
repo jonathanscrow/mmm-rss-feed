@@ -1,0 +1,50 @@
+name: Sunday Feed Rotation
+
+# Sunday at 11:00 UTC = 6:00 AM CDT (US Central, summer)
+#                    = 5:00 AM CST (US Central, winter)
+# Running at 11:00 UTC means in the winter we technically rotate at 5 AM Central
+# instead of 6, which is fine — it's still well before the 7 AM preview send and
+# the 8 AM production send. And the date we're "looking up" is determined by
+# Central Time's calendar, not by the cron time, so the right week is selected
+# either way.
+on:
+  schedule:
+    - cron: '0 11 * * 0'   # Sunday at 11:00 UTC
+
+  # Allow manual trigger from the GitHub Actions UI for emergencies / testing
+  workflow_dispatch:
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to commit the updated feed back to the repo
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install gspread google-auth
+
+      - name: Generate feed from Google Sheet
+        env:
+          GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        run: python scripts/generate_feed.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "MMM Rotation Bot"
+          git config user.email "actions@github.com"
+          git add mmm-feed.xml logs/
+          if git diff --staged --quiet; then
+            echo "No changes to commit (feed content identical)."
+          else
+            git commit -m "Sunday rotation: $(date -u +%Y-%m-%d)"
+            git push
+          fi
