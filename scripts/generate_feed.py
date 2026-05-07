@@ -3,14 +3,16 @@
 generate_feed.py — Monday Morning Motivator feed generator.
 
 Reads the campaign calendar from Google Sheets, finds the row whose send_date
-matches the most recent Monday on or before today (in Central Time), and writes
+matches the upcoming Monday (or today if today is Monday), and writes
 mmm-feed.xml with that single item.
 
 Design principles:
 - The Google Sheet is the canonical source of truth. This script is a pure function:
   (sheet contents, current date) -> feed file. No state is kept anywhere else.
-- "Most recent Monday on or before today" is self-correcting: if the Sunday rotation
-  fails and the script runs Monday morning instead, it picks the same Monday's content.
+- Forward-looking date logic: on Sunday, the script picks tomorrow's Monday so the
+  Sunday preview email shows the upcoming send. On Monday, it picks today.
+  Tuesday-Saturday it picks the next Monday (immaterial — feed isn't polled
+  during those days anyway).
 - Writes to stdout for the GitHub Action log (auditable: each run prints which week
   was selected and why).
 - Exits non-zero on any error so the Action shows a failure (which emails the repo
@@ -34,28 +36,30 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Date logic
 # ---------------------------------------------------------------------------
 
-# Central Time. Texas observes CDT (UTC-5) Mar-Nov, CST (UTC-6) Nov-Mar.
-# We use a date-only comparison, so the offset doesn't actually affect the result —
-# we just need to know what "today" is in Texas.
-def central_today() -> datetime.date:
+def central_today():
     """Return today's date in Central Time."""
-    # Use US/Central via tzdata-style fixed offset is fragile across DST.
-    # Easier: get UTC, shift by -6h (CST is the safer assumption — at worst we'd
-    # consider it "still Sunday" in the small DST overlap, which is fine because
-    # the feed gets regenerated again Monday morning).
+    # Use UTC-6 (CST) to be conservative — at worst this means during a DST overlap
+    # we'd consider it "still yesterday" in Texas, which is fine because the date
+    # we care about (this week's Monday) doesn't change.
     utc_now = datetime.now(timezone.utc)
-    central_offset = timezone(timedelta(hours=-6))  # CST (worst case)
+    central_offset = timezone(timedelta(hours=-6))  # CST
     return utc_now.astimezone(central_offset).date()
 
 
-def latest_monday_on_or_before(d) -> 'date':
-    """Return the most recent Monday on or before date d. If d is Monday, return d."""
-    days_since_monday = d.weekday()  # 0 = Monday, 6 = Sunday
-    from datetime import timedelta as td
-    return d - td(days=days_since_monday)
+def upcoming_monday_on_or_after(d):
+    """Return the next Monday from date d, or d itself if d is already a Monday.
+
+    Examples:
+      Sunday   2026-05-10 -> Monday 2026-05-11
+      Monday   2026-05-11 -> Monday 2026-05-11  (today)
+      Tuesday  2026-05-12 -> Monday 2026-05-18  (next week)
+      Saturday 2026-05-16 -> Monday 2026-05-18  (next week)
+    """
+    days_ahead = (0 - d.weekday()) % 7  # Mon=0, ..., Sun=6
+    return d + timedelta(days=days_ahead)
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +113,7 @@ def find_current_row(rows, target_date):
 # Build the RSS feed XML
 # ---------------------------------------------------------------------------
 
-def xml_escape(s: str) -> str:
+def xml_escape(s):
     """Escape XML special characters in attribute values and text."""
     return (str(s)
             .replace('&', '&amp;')
@@ -119,7 +123,7 @@ def xml_escape(s: str) -> str:
             .replace("'", '&apos;'))
 
 
-def build_feed(row, generated_at_utc: datetime) -> str:
+def build_feed(row, generated_at_utc):
     """
     Build the RSS 2.0 feed with a single <item>.
 
@@ -188,7 +192,7 @@ def build_feed(row, generated_at_utc: datetime) -> str:
 
 def main():
     today_ct = central_today()
-    target_monday = latest_monday_on_or_before(today_ct)
+    target_monday = upcoming_monday_on_or_after(today_ct)
 
     print(f"Today (Central): {today_ct} ({today_ct.strftime('%A')})")
     print(f"Target Monday:   {target_monday}")
