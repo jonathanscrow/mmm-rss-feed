@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>“Go as far as you can see; when you get...” - Thomas Carlyle</title>
+    <title>“Life isn’t about finding yourself. Life is...” - George Bernard Shaw</title>
     <link>https://www.texinspec.com/monday-motivator</link>
     <description>Weekly motivation from TexInspec</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 31 Aug 2026 18:51:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 06 Sep 2026 13:51:20 +0000</lastBuildDate>
     <atom:link href="https://raw.githubusercontent.com/jonathanscrow/mmm-rss-feed/refs/heads/main/mmm-feed.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>“Go as far as you can see; when you get...” - Thomas Carlyle</title>
-      <link>https://www.texinspec.com/monday-motivator/wk017</link>
-      <guid isPermaLink="false">mmm-wk017-2026-08-31</guid>
-      <pubDate>Mon, 31 Aug 2026 12:00:00 -0600</pubDate>
+      <title>“Life isn’t about finding yourself. Life is...” - George Bernard Shaw</title>
+      <link>https://www.texinspec.com/monday-motivator/wk018</link>
+      <guid isPermaLink="false">mmm-wk018-2026-09-07</guid>
+      <pubDate>Mon, 07 Sep 2026 12:00:00 -0600</pubDate>
       <author>clientcare@texinspec.com (TexInspec)</author>
-      <description><![CDATA[<img src="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4becb53a7350ae728.png" alt="Monday Motivator Week 17" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />]]></description>
+      <description><![CDATA[<img src="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4d38dd618870bd6de.png" alt="Monday Motivator Week 18" style="max-width:600px;width:100%;height:auto;display:block;margin:0 auto;" />]]></description>
       <content:encoded><![CDATA[
 <div style="text-align:center;font-family:Georgia,serif;">
   <blockquote style="font-size:20px;font-style:italic;margin:24px auto;max-width:540px;line-height:1.5;">
-    &ldquo;Go as far as you can see; when you get there, you’ll be able to see further.&rdquo;
+    &ldquo;Life isn’t about finding yourself. Life is about creating yourself.&rdquo;
   </blockquote>
-  <p style="font-size:16px;color:#555;margin-top:16px;">&mdash; Thomas Carlyle</p>
+  <p style="font-size:16px;color:#555;margin-top:16px;">&mdash; George Bernard Shaw</p>
 </div>
 ]]></content:encoded>
-      <enclosure url="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4becb53a7350ae728.png" type="image/png" length="0" />
-      <media:content url="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4becb53a7350ae728.png" medium="image" type="image/png" />
+      <enclosure url="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4d38dd618870bd6de.png" type="image/png" length="0" />
+      <media:content url="https://assets.cdn.filesafe.space/Q9BBw0k6pwAG1UWv1dSU/media/69fa42e4d38dd618870bd6de.png" medium="image" type="image/png" />
     </item>
   </channel>
 </rss>
